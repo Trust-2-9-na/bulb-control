@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor Data Visualization</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: yellowgreen;
+            color: #fff;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        header nav a {
+            color: #fff;
+            text-decoration: none;
+            padding: 10px;
+            display: inline-block;
+        }
+        header nav a:hover {
+            background-color: #575757;
+        }
+        main {
+            padding: 20px;
+        }
+        h2 {
+            text-align: center;
+        }
+        svg {
+            display: block;
+            margin: 20px auto;
+            font: 10px sans-serif;
+        }
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+    </style>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Sensor Data Visualization</h1>
+        <nav>
+            <a href="{% url 'average_sensor_data' %}">View Average Sensor Data</a>
+        </nav>
+    </header>
+    <main>
+        <h2>Temperature Over Time (Line Chart)</h2>
+        <div id="line-chart"></div>
+
+        <h2>Humidity Over Time (Bar Chart)</h2>
+        <div id="bar-chart"></div>
+    </main>
+    <footer>
+        <p>&copy; 2024 Sensor Data API</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Parse JSON data passed from Django
+            const sensorData = JSON.parse('{{ sensor_data_json|escapejs }}');
+
+            // Set up dimensions
+            const margin = {top: 20, right: 30, bottom: 30, left: 40},
+                  width = 800 - margin.left - margin.right,
+                  height = 400 - margin.top - margin.bottom;
+
+            // Convert timestamp to Date object
+            sensorData.forEach(d => {
+                d.timestamp = new Date(d.timestamp);
+            });
+
+            // Line Chart for Temperature
+            const xScaleLine = d3.scaleTime()
+                .domain(d3.extent(sensorData, d => d.timestamp))
+                .range([0, width]);
+
+            const yScaleLine = d3.scaleLinear()
+                .domain([0, d3.max(sensorData, d => d.temperature)])
+                .range([height, 0]);
+
+            const line = d3.line()
+                .x(d => xScaleLine(d.timestamp))
+                .y(d => yScaleLine(d.temperature));
+
+            const svgLine = d3.select("#line-chart")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            svgLine.append("path")
+                .datum(sensorData)
+                .attr("class", "line")
+                .attr("d", line)
+                .style("fill", "none")
+                .style("stroke", "steelblue")
+                .style("stroke-width", "2px");
+
+            svgLine.append("g")
+                .attr("class", "x axis")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(xScaleLine));
+
+            svgLine.append("g")
+                .attr("class", "y axis")
+                .call(d3.axisLeft(yScaleLine));
+
+            // Bar Chart for Humidity
+            const xScaleBar = d3.scaleBand()
+                .domain(sensorData.map(d => d.timestamp))
+                .range([0, width])
+                .padding(0.1);
+
+            const yScaleBar = d3.scaleLinear()
+                .domain([0, d3.max(sensorData, d => d.humidity)])
+                .range([height, 0]);
+
+            const svgBar = d3.select("#bar-chart")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            svgBar.selectAll(".bar")
+                .data(sensorData)
+                .enter().append("rect")
+                .attr("class", "bar")
+                .attr("x", d => xScaleBar(d.timestamp))
+                .attr("y", d => yScaleBar(d.humidity))
+                .attr("width", xScaleBar.bandwidth())
+                .attr("height", d => height - yScaleBar(d.humidity))
+                .attr("fill", "orange");
+
+            svgBar.append("g")
+                .attr("class", "x axis")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(xScaleBar).tickFormat(d3.timeFormat("%H:%M:%S")));
+
+            svgBar.append("g")
+                .attr("class", "y axis")
+                .call(d3.axisLeft(yScaleBar));
+        });
+    </script>
+</body>
+</html>

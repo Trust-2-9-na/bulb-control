@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Sensor Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: yellowgreen;
+            color: #fff;
+            padding: 10px 20px;
+            text-align: center;
+        }
+        header nav a {
+            color: #fff;
+            text-decoration: none;
+            padding: 10px;
+            display: inline-block;
+        }
+        header nav a:hover {
+            background-color: #575757;
+        }
+        main {
+            padding: 20px;
+        }
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid yellowgreen;
+        }
+        th, td {
+            padding: 8px 12px;
+            text-align: center;
+        }
+        th {
+            background-color: yellowgreen;
+            color: #fff;
+        }
+        footer {
+            text-align: center;
+            padding: 10px;
+            background-color: yellowgreen;
+            color: #fff;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Real-Time Sensor Data</h1>
+        <nav>
+            <a href="{% url 'charts_view' %}">Go to Charts</a>
+            <a href="{% url 'bulb_control' %}">Bulb Control</a> <!-- Added Bulb Control link -->
+        </nav>
+    </header>
+    <main>
+        <h2>Latest Sensor Data</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Temperature (°C)</th>
+                    <th>Humidity (%)</th>
+                </tr>
+            </thead>
+            <tbody id="sensor-data-table">
+                <!-- Table rows will be inserted here by JavaScript -->
+            </tbody>
+        </table>
+    </main>
+    <footer>
+        <p>&copy; 2024 Sensor Data API</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Function to refresh the data every 6 seconds
+            function refreshData() {
+                const sensorData = JSON.parse('{{ sensor_data_json|escapejs }}');
+                
+                const tableBody = document.getElementById('sensor-data-table');
+                tableBody.innerHTML = ''; // Clear existing rows
+
+                // Populate table with new data
+                sensorData.forEach(data => {
+                    const row = document.createElement('tr');
+                    const timestampCell = document.createElement('td');
+                    const temperatureCell = document.createElement('td');
+                    const humidityCell = document.createElement('td');
+
+                    timestampCell.textContent = new Date(data.timestamp).toLocaleString();
+                    temperatureCell.textContent = `${data.temperature.toFixed(2)} °C`;
+                    humidityCell.textContent = `${data.humidity.toFixed(2)} %`;
+
+                    row.appendChild(timestampCell);
+                    row.appendChild(temperatureCell);
+                    row.appendChild(humidityCell);
+                    tableBody.appendChild(row);
+                });
+            }
+
+            // Initial load
+            refreshData();
+
+            // Refresh every 6 seconds
+            setInterval(refreshData, 6000);
+        });
+    </script>
+</body>
+</html>
