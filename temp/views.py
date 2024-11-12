@@ -62,18 +62,21 @@ class BulbControlView(View):
         return render(request, 'temp/bulb_control.html')
 
     def post(self, request, *args, **kwargs):
-        # Retrieve the code from the POST data
-        code = request.POST.get('code')
-        if code == 'SWITCH_ON':
+        # Retrieve the code or command from the POST data
+        command = request.POST.get('code') or request.POST.get('command')
+        
+        # Determine the status based on the command or code received
+        if command in ['SWITCH_ON', 'ON']:
             status = 'ON'
-        elif code == 'SWITCH_OFF':
+        elif command in ['SWITCH_OFF', 'OFF']:
             status = 'OFF'
         else:
-            return JsonResponse({'error': 'Invalid code'}, status=400)
-        
+            return JsonResponse({'error': 'Invalid command or code'}, status=400)
+
         # Create a new BulbControl instance and save it to the database
         bulb_control = BulbControl(status=status)
         bulb_control.save()
+
         # Return a success response
         return JsonResponse({'message': f'Bulb turned {status}', 'status': status}, status=200)
 
